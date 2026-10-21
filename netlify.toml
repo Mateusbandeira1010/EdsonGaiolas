@@ -1,0 +1,4 @@
+[[redirects]]
+  from = "/produto/:id"
+  to = "/.netlify/functions/produto?id=:id"
+  status = 200
