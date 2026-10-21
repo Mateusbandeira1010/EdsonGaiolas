@@ -191,7 +191,7 @@
               <h2>${escapeHtml(p.nome)}</h2>
               <div class="desc">${escapeHtml(p.descricao || "")}</div>
               <div class="price">${dinheiro(p.preco)}</div>
-              <a class="button" href="${whatsapp}" ${whatsapp === "#" ? 'onclick="alert(\'O WhatsApp ainda será¡ configurado.\');return false;"' : 'target="_blank" rel="noopener"'}>Enviar Mensagem</a>
+              <a class="button" href="${whatsapp}" target="_blank" rel="noopener">Enviar Mensagem</a>
             </div>
           </article>`;
       }).join("");
