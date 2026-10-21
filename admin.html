@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Painel Administrativo</title>
+  <style>
+    *{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;background:#f5f5f5;color:#292929}
+    header{background:#fff;border-bottom:1px solid #ddd;padding:18px 24px;display:flex;justify-content:space-between;align-items:center}
+    main{max-width:1000px;margin:30px auto;padding:0 20px}.box{background:#fff;border:1px solid #ddd;border-radius:14px;padding:24px;margin-bottom:22px}
+    h1,h2{margin-top:0}.form{display:grid;gap:13px}label{font-weight:bold;font-size:14px}input,textarea{width:100%;padding:12px;border:1px solid #ccc;border-radius:8px;font:inherit}
+    textarea{min-height:100px;resize:vertical}.row{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+    button{border:0;border-radius:8px;padding:12px 16px;cursor:pointer;font-weight:bold}.primary{background:#292929;color:#fff}.danger{background:#eee;color:#a00}
+    .hidden{display:none}.top-actions{display:flex;gap:10px}.msg{margin-top:12px;padding:10px;border-radius:8px;background:#f0f0f0}
+    .product{display:grid;grid-template-columns:90px 1fr auto;gap:15px;align-items:center;border-top:1px solid #eee;padding:14px 0}
+    .product img{width:90px;height:70px;object-fit:cover;border-radius:8px;background:#eee}.product small{color:#777}
+    @media(max-width:650px){.row{grid-template-columns:1fr}.product{grid-template-columns:70px 1fr}.product .actions{grid-column:2}}
+  </style>
+</head>
+<body>
+  <header>
+    <strong>Painel Administrativo</strong>
+    <button id="logout" class="danger hidden">Sair</button>
+  </header>
+
+  <main>
+    <section id="loginBox" class="box">
+      <h1>Entrar</h1>
+      <form id="loginForm" class="form">
+        <label>E-mail</label>
+        <input id="email" type="email" required>
+        <label>Senha</label>
+        <input id="senha" type="password" required>
+        <button class="primary" type="submit">Entrar</button>
+      </form>
+      <div id="loginMsg" class="msg hidden"></div>
+    </section>
+
+    <section id="adminBox" class="hidden">
+      <div class="box">
+        <h2 id="formTitle">Novo produto</h2>
+        <form id="productForm" class="form">
+          <input id="productId" type="hidden">
+          <div class="row">
+            <div><label>Nome</label><input id="nome" required></div>
+            <div><label>Modelo</label><input id="modelo" required></div>
+          </div>
+          <label>Descrição</label>
+          <textarea id="descricao"></textarea>
+          <div class="row">
+            <div><label>Preço</label><input id="preco" type="number" step="0.01" min="0" required></div>
+            <div><label>Foto</label><input id="foto" type="file" accept="image/*"></div>
+          </div>
+          <label>Vídeo (URL do YouTube, opcional)</label>
+          <input id="video_url" type="url" placeholder="https://www.youtube.com/...">
+          <label><input id="visivel" type="checkbox" checked> Produto visível no site</label>
+          <div class="top-actions">
+            <button class="primary" type="submit">Salvar produto</button>
+            <button id="cancelEdit" type="button" class="hidden">Cancelar edição</button>
+          </div>
+          <div id="formMsg" class="msg hidden"></div>
+        </form>
+      </div>
+
+      <div class="box">
+        <h2>Produtos cadastrados</h2>
+        <div id="lista">Carregando...</div>
+      </div>
+    </section>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    const SB_URL = "https://zjykakrtaatfnijfkueh.supabase.co";
+    const SB_KEY = "sb_publishable_EhqZH52Fr45qSa6p-W4DmQ_xYefivQy";
+    const supabaseClient = supabase.createClient(SB_URL, SB_KEY);
+
+    const $ = id => document.getElementById(id);
+
+    $("loginForm").addEventListener("submit", async e => {
+      e.preventDefault();
+      $("loginMsg").classList.add("hidden");
+
+      const { error } = await supabaseClient.auth.signInWithPassword({
+        email: $("email").value,
+        password: $("senha").value
+      });
+
+      if (error) {
+        $("loginMsg").textContent = "E-mail ou senha incorretos.";
+        $("loginMsg").classList.remove("hidden");
+        return;
+      }
+      atualizarTela();
+    });
+
+    $("logout").addEventListener("click", async () => {
+      await supabaseClient.auth.signOut();
+      atualizarTela();
+    });
+
+    $("productForm").addEventListener("submit", async e => {
+      e.preventDefault();
+      const msg = $("formMsg");
+      msg.classList.remove("hidden");
+      msg.textContent = "Salvando...";
+
+      const id = $("productId").value;
+      let foto_url = "";
+
+      if (id) {
+        const { data: antigo } = await supabaseClient.from("produtos").select("foto_url").eq("id", id).single();
+        foto_url = antigo?.foto_url || "";
+      }
+
+      const arquivo = $("foto").files[0];
+      if (arquivo) {
+        const nomeArquivo = `${Date.now()}-${arquivo.name.replace(/[^a-zA-Z0-9._-]/g, "-")}`;
+        const { error: uploadError } = await supabaseClient.storage.from("fotos").upload(nomeArquivo, arquivo, {upsert:false});
+
+        if (uploadError) {
+          msg.textContent = "Erro ao enviar a foto: " + uploadError.message;
+          return;
+        }
+
+        const { data: publicData } = supabaseClient.storage.from("fotos").getPublicUrl(nomeArquivo);
+        foto_url = publicData.publicUrl;
+      }
+
+      const produto = {
+        nome: $("nome").value.trim(),
+        modelo: $("modelo").value.trim(),
+        descricao: $("descricao").value.trim(),
+        preco: Number($("preco").value),
+        foto_url,
+        video_url: $("video_url").value.trim() || null,
+        visivel: $("visivel").checked
+      };
+
+      let result;
+      if (id) {
+        result = await supabaseClient.from("produtos").update(produto).eq("id", id);
+      } else {
+        result = await supabaseClient.from("produtos").insert(produto);
+      }
+
+      if (result.error) {
+        msg.textContent = "Erro: " + result.error.message;
+        return;
+      }
+
+      msg.textContent = "Produto salvo com sucesso.";
+      limparFormulario();
+      carregarProdutos();
+    });
+
+    $("cancelEdit").addEventListener("click", limparFormulario);
+
+    async function carregarProdutos() {
+      const { data, error } = await supabaseClient.from("produtos").select("*").order("id", {ascending:false});
+      if (error) {
+        $("lista").textContent = "Erro ao carregar produtos: " + error.message;
+        return;
+      }
+
+      if (!data.length) {
+        $("lista").textContent = "Nenhum produto cadastrado ainda.";
+        return;
+      }
+
+      $("lista").innerHTML = data.map(p => `
+        <div class="product">
+          ${p.foto_url ? `<img src="${p.foto_url}" alt="">` : '<div></div>'}
+          <div>
+            <strong>${escapeHtml(p.nome)}</strong><br>
+            <small>${escapeHtml(p.modelo)} · R$ ${Number(p.preco).toFixed(2).replace(".", ",")} · ${p.visivel ? "visível" : "oculto"}</small>
+          </div>
+          <div class="actions">
+            <button onclick="editar(${p.id})">Editar</button>
+            <button class="danger" onclick="excluir(${p.id})">Excluir</button>
+          </div>
+        </div>`).join("");
+    }
+
+    window.editar = async id => {
+      const { data, error } = await supabaseClient.from("produtos").select("*").eq("id", id).single();
+      if (error) return alert(error.message);
+
+      $("productId").value = data.id;
+      $("nome").value = data.nome || "";
+      $("modelo").value = data.modelo || "";
+      $("descricao").value = data.descricao || "";
+      $("preco").value = data.preco || "";
+      $("video_url").value = data.video_url || "";
+      $("visivel").checked = !!data.visivel;
+      $("formTitle").textContent = "Editar produto";
+      $("cancelEdit").classList.remove("hidden");
+      window.scrollTo({top:0, behavior:"smooth"});
+    };
+
+    window.excluir = async id => {
+      if (!confirm("Excluir este produto?")) return;
+      const { error } = await supabaseClient.from("produtos").delete().eq("id", id);
+      if (error) return alert(error.message);
+      carregarProdutos();
+    };
+
+    function limparFormulario() {
+      $("productForm").reset();
+      $("productId").value = "";
+      $("visivel").checked = true;
+      $("formTitle").textContent = "Novo produto";
+      $("cancelEdit").classList.add("hidden");
+    }
+
+    function escapeHtml(value) {
+      return String(value).replace(/[&<>"']/g, c => ({
+        "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"
+      }[c]));
+    }
+
+    async function atualizarTela() {
+      const { data: { session } } = await supabaseClient.auth.getSession();
+      const logado = !!session;
+      $("loginBox").classList.toggle("hidden", logado);
+      $("adminBox").classList.toggle("hidden", !logado);
+      $("logout").classList.toggle("hidden", !logado);
+      if (logado) carregarProdutos();
+    }
+
+    supabaseClient.auth.onAuthStateChange(() => atualizarTela());
+    atualizarTela();
+  </script>
+</body>
+</html>
+
