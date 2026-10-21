@@ -178,7 +178,13 @@
       }
 
       area.innerHTML = data.map(p => {
-        const texto = `Olá¡! Tenho interesse no produto ${p.nome}.`;
+        const texto = `Olá! Tenho interesse neste produto.
+
+Nome: ${p.nome}
+Descrição: ${p.descricao || ""}
+Valor: ${dinheiro(p.preco)}
+
+Veja o produto: https://edsongaiolas.netlify.app/produto/${p.id}`;
         const whatsapp = WHATSAPP !== "SEU_NUMERO_AQUI"
           ? `https://wa.me/${WHATSAPP}?text=${encodeURIComponent(texto)}`
           : "#";
@@ -192,7 +198,6 @@
               <div class="desc">${escapeHtml(p.descricao || "")}</div>
               <div class="price">${dinheiro(p.preco)}</div>
               <a class="button" href="${whatsapp}" target="_blank" rel="noopener">Enviar Mensagem</a>
-              <a class="button share" href="/produto/${p.id}" target="_blank" rel="noopener">Compartilhar produto</a>
             </div>
           </article>`;
       }).join("");
