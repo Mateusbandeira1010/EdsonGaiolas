@@ -1,4 +1,5 @@
 [[redirects]]
   from = "/produto/:id"
-  to = "/.netlify/functions/produto?id=:id"
+  query = {id = ":id"}
+  to = "/.netlify/functions/produto"
   status = 200
