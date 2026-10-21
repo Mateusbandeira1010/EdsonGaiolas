@@ -192,6 +192,7 @@
               <div class="desc">${escapeHtml(p.descricao || "")}</div>
               <div class="price">${dinheiro(p.preco)}</div>
               <a class="button" href="${whatsapp}" target="_blank" rel="noopener">Enviar Mensagem</a>
+              <a class="button share" href="/produto/${p.id}" target="_blank" rel="noopener">Compartilhar produto</a>
             </div>
           </article>`;
       }).join("");
