@@ -1,5 +1,5 @@
 exports.handler = async function(event) {
-  const id = event.queryStringParameters?.id;
+  const id = event.queryStringParameters?.id || event.path?.split("/").pop();
 
   if (!id) {
     return {
