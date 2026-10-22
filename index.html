@@ -32,6 +32,7 @@
     .card{background:var(--surface);border:1px solid var(--line);border-radius:16px;overflow:hidden;box-shadow:0 8px 25px rgba(22,34,28,.07);transition:transform .2s,box-shadow .2s}
     .card:hover{transform:translateY(-4px);box-shadow:0 14px 32px rgba(22,34,28,.12)}
     .photo{display:block;width:100%;height:auto;aspect-ratio:1/1;object-fit:contain;background:#e3ebdf;padding:8px 2px}
+    .card-actions{display:grid;grid-template-columns:1fr;gap:10px;margin-top:20px}.card-actions .button{margin:0}.share-button{display:flex;align-items:center;justify-content:center;gap:8px;padding:12px 16px;border:1px solid var(--green);border-radius:8px;background:#fff;color:var(--green);font:inherit;font-weight:700;cursor:pointer}.share-button svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}@media(max-width:600px){.card-actions{grid-template-columns:1fr;gap:9px}.share-button{min-height:46px}}
     .content{padding:21px}
     .model{font-size:12px;color:var(--wood);font-weight:700;text-transform:uppercase;letter-spacing:.1em}
     h2{margin:8px 0 9px;font-size:23px;line-height:1.2;color:var(--ink)}
@@ -169,7 +170,7 @@ Veja o produto: https://edsongaiolas.netlify.app/produto/${p.id}`;
               <h2>${escapeHtml(p.nome)}</h2>
               <div class="desc">${escapeHtml(p.descricao || "")}</div>
               <div class="price">${dinheiro(p.preco)}</div>
-              <a class="button" href="${whatsapp}" target="_blank" rel="noopener">Enviar Mensagem</a>
+              <div class="card-actions"><a class="button" href="${whatsapp}" target="_blank" rel="noopener">Enviar Mensagem</a><button class="share-button" type="button" data-share-id="${p.id}" data-share-name="${escapeHtml(p.nome)}"><svg viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4"/></svg>Compartilhar</button></div>
             </div>
           </article>`;
       }).join("");
@@ -181,6 +182,27 @@ Veja o produto: https://edsongaiolas.netlify.app/produto/${p.id}`;
       }[c]));
     }
 
+document.addEventListener("click", async function(e) {
+  const botao = e.target.closest(".share-button");
+  if (!botao) return;
+
+  const id = botao.dataset.shareId;
+  const nome = botao.dataset.shareName || "Produto";
+  const url = `https://edsongaiolas.netlify.app/produto/${encodeURIComponent(id)}`;
+
+  try {
+    if (navigator.share) {
+      await navigator.share({title: nome, text: `Confira este produto: ${nome}`, url});
+    } else {
+      await navigator.clipboard.writeText(url);
+      const textoOriginal = botao.innerHTML;
+      botao.textContent = "Link copiado!";
+      setTimeout(() => { botao.innerHTML = textoOriginal; }, 1800);
+    }
+  } catch (error) {
+    if (error.name !== "AbortError") console.error(error);
+  }
+});
     document.getElementById("buscaProduto").addEventListener("input", function() {
       const termo = this.value.trim().toLowerCase();
       const cards = document.querySelectorAll("#produtos .card");
