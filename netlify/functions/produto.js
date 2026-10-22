@@ -41,7 +41,7 @@ exports.handler = async function(event) {
     const nome = String(produto.nome || "Produto");
     const descricao = String(produto.descricao || "");
     const imagem = String(produto.foto_url || "");
-    const url = `https://edsongaiolas.netlify.app/.netlify/functions/produto?id=${encodeURIComponent(id)}`;
+    const url = `https://edsongaiolas.netlify.app/produto/${encodeURIComponent(id)}`;
 
     const escapeHtml = (texto) =>
       texto.replace(/[&<>"']/g, caractere => ({
