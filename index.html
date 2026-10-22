@@ -68,6 +68,7 @@
     .empty{text-align:center;padding:60px 20px;color:var(--muted)}
     @media(max-width:800px){.perks ul{grid-template-columns:repeat(2,1fr)}.perks li:nth-child(2n){border-right:0}.perks li:nth-child(-n+2){border-bottom:1px solid var(--line)}}
     @media(max-width:600px){.perks ul{grid-template-columns:1fr;padding:0 15px}.perks li,.perks li:nth-child(2n){border-right:0;border-bottom:1px solid var(--line)}.perks li:last-child{border-bottom:0}header .bar{min-height:68px}.logo{font-size:21px}.zap{padding:10px 13px;font-size:13px}.hero{padding:50px 0 55px}.hero h1{font-size:40px}.hero p{font-size:16px}main{padding:40px 15px 55px}.grid{grid-template-columns:1fr}}
+    .catalog-head{max-width:1200px;margin:0 auto 28px;display:flex;align-items:end;justify-content:space-between;gap:25px}.catalog-head h2{margin:0 0 6px;font-size:28px;color:var(--text)}.catalog-head p{margin:0;color:var(--muted);font-size:14px}.catalog-head input{width:300px;padding:14px 16px;border:1px solid var(--line);border-radius:10px;background:#fff;color:var(--text);font:inherit;outline:none}.catalog-head input:focus{border-color:var(--green);box-shadow:0 0 0 3px rgba(35,134,54,.10)}
   </style>
 </head>
 <body>
@@ -88,7 +89,7 @@
 </section>
 
   <main>
-    <div id="status">Carregando produtos...</div>
+    <div class="catalog-head"><div><h2>Modelos disponíveis</h2><p>Encontre seu produto pelo nome ou modelo.</p></div><input id="buscaProduto" type="search" placeholder="Buscar produto" aria-label="Buscar produto"></div><div id="status">Carregando produtos...</div>
     <section id="produtos" class="grid"></section>
   </main>
 
@@ -149,6 +150,7 @@
     const WHATSAPP = "5588981919808";
 
     const supabaseClient = supabase.createClient(SB_URL, SB_KEY);
+    let produtos = [];
 
     function dinheiro(valor) {
       return Number(valor).toLocaleString("pt-BR", {style:"currency", currency:"BRL"});
@@ -170,7 +172,8 @@
         return;
       }
 
-      status.style.display = "none";
+    produtos = data;
+    status.style.display = "none";
 
       if (!data.length) {
         area.innerHTML = '<div class="empty">Nenhum produto encontrado.</div>';
@@ -209,6 +212,15 @@ Veja o produto: https://edsongaiolas.netlify.app/produto/${p.id}`;
       }[c]));
     }
 
+    document.getElementById("buscaProduto").addEventListener("input", function() {
+      const termo = this.value.trim().toLowerCase();
+      const cards = document.querySelectorAll("#produtos .card");
+      cards.forEach(card => {
+        const nome = card.querySelector("h2")?.textContent.toLowerCase() || "";
+        const modelo = card.querySelector(".model")?.textContent.toLowerCase() || "";
+        card.style.display = (!termo || nome.includes(termo) || modelo.includes(termo)) ? "" : "none";
+      });
+    });
     carregarProdutos();
   </script>
 </body>
