@@ -66,6 +66,9 @@ exports.handler = async function(event) {
 <html lang="pt-BR">
 <head>
 <meta charset="utf-8">
+<meta name="description" content="${escapeHtml(descricao)}">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="${escapeHtml(url)}">
 <meta property="og:type" content="website">
 <meta property="og:title" content="${escapeHtml(nome)}">
 <meta property="og:description" content="${escapeHtml(descricao)}">
